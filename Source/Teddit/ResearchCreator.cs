@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using Data.ScriptableObject;
+using Game.CompanyScripts;
 using Language;
 using Manager;
 using Newtonsoft.Json.Linq;
@@ -36,6 +37,11 @@ namespace Teddit
         {
             var rd = ScriptableObject.CreateInstance<ResearchDefinition>();
             FacilityCreator.SetField(rd, "id", id);
+
+            // CreateInstance leaves unlockData as a blank UnlockData (action None, null strings).
+            // Start with no unlocks so the YAML unlocks aren't merged in behind that blank one.
+            rd.unlockData = null;
+            rd.unlockDataList = new UnlockData[0];
 
             // researchType / researchSubType — required (UI crashes if null)
             string rtId  = FacilityCreator.GetVal<string>(def, "researchType",    null);
@@ -85,6 +91,13 @@ namespace Teddit
 
             // Complex fields: requirementsResearch, newViewResearchTreeParent, unlocks
             ScriptableObjectPatcher.ApplyResearchComplexFields(rd, def, id, allSO);
+
+            // Research without unlocks still needs a (blank) unlockData: game code reads it unchecked.
+            if (rd.unlockData == null)
+            {
+                rd.unlockData = new UnlockData();
+                ScriptableObjectPatcher.FillUnlockDefaults(rd.unlockData);
+            }
 
             // Inject into AllResearchDefinition
             var allResearch = allSO.AllResearchDefinition;

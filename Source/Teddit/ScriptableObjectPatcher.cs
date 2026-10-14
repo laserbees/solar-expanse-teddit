@@ -1235,6 +1235,7 @@ namespace Teddit
         {
             string actionStr = unlockObj["action"]?.Value<string>() ?? "UnlockFacility";
             object ud = Activator.CreateInstance(udType);
+            FillUnlockDefaults(ud);
 
             if (actionEnumType != null && actionFi != null)
             {
@@ -1454,6 +1455,25 @@ namespace Teddit
                     yield return unlock;
         }
 
+        /// <summary>
+        /// Gives a new UnlockData the values the game's own (deserialized) unlocks have: empty
+        /// strings and arrays instead of null. Game code calls e.g. parameter1.Equals(...) on every
+        /// research's unlocks (ResearchManager.FindResearchForProductionItem, used by AI flight
+        /// planning), so a null parameter1 throws thousands of NullReferenceExceptions.
+        /// </summary>
+        internal static void FillUnlockDefaults(object ud)
+        {
+            if (ud == null) return;
+            foreach (var fi in ud.GetType().GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
+            {
+                if (fi.GetValue(ud) != null) continue;
+                if (fi.FieldType == typeof(string))
+                    fi.SetValue(ud, string.Empty);
+                else if (fi.FieldType.IsArray)
+                    fi.SetValue(ud, Array.CreateInstance(fi.FieldType.GetElementType(), 0));
+            }
+        }
+
         static void SetResearchUnlocks(ResearchDefinition rd, List<object> unlocks, Type udType, FieldInfo actionFi)
         {
             var unlockDataFi = FindField(rd.GetType(), "unlockData");
@@ -1462,6 +1482,7 @@ namespace Teddit
             if (unlocks == null || unlocks.Count == 0)
             {
                 object emptyUnlock = Activator.CreateInstance(udType);
+                FillUnlockDefaults(emptyUnlock);
                 if (actionFi != null)
                     actionFi.SetValue(emptyUnlock, Enum.ToObject(actionFi.FieldType, 0));
 
