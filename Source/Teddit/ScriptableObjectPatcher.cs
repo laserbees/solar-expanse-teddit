@@ -1227,6 +1227,7 @@ namespace Teddit
                     : MergeResearchUnlocks(rd, udObjects, udType);
 
                 SetResearchUnlocks(rd, finalUnlocks, udType, actionFi);
+                ResearchUnlockSync.Record(rd, udObjects);
                 Plugin.Log.LogDebug($"{prefix} {id}.unlocks = {finalUnlocks.Count} entries (replace={replaceUnlocks})");
             }
         }

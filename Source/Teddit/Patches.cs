@@ -167,6 +167,7 @@ namespace Teddit
 
             // ── Apply each mod directory in order ─────────────────────────────
             LifeSupportPatcher.ResetConfig();
+            ResearchUnlockSync.Reset();
 
             foreach (var dir in dirs)
             {
@@ -204,6 +205,10 @@ namespace Teddit
 
             // ── Deferred market refresh so modded resources get trade offers ──
             MarketRefresh.Schedule();
+
+            // ── Unlocks added to research a company has already completed ─────
+            try { ResearchUnlockSync.ApplyToCompletedResearch(); }
+            catch (Exception ex) { Plugin.Log.LogError($"[ResearchUnlockSync] {ex}"); }
         }
 
         static void ApplyModDir(string dir, ObjectInfoManager oi, RootPatchSettings rootSettings)
